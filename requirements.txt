@@ -6,3 +6,5 @@ Pillow
 requests
 python-dotenv
 schedule==1.2.2
+selenium
+webdriver-manager
