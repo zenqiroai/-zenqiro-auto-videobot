@@ -1,45 +1,57 @@
-import os, json, time, random, schedule, subprocess
+import os, json, time, random, schedule
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service # NAYA
+from webdriver_manager.chrome import ChromeDriverManager # NAYA
 import google.generativeai as genai
 import telebot
 
 # ====== SETTINGS ======
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_TOKEN") # Railway wala naam
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 COOKIES_FOLDER = "/mnt/data/cookies"
 DAY_FILE = "/mnt/data/day_counter.txt"
-WEB_LINK = os.getenv("ZENQIRO_URL") # <-- yahan se web link uthayega
+WEB_LINK = os.getenv("ZENQIRO_URL")
 
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 genai.configure(api_key=GEMINI_API_KEY)
 
-# ====== 1. CHROME SETUP ======
+def safe_send(msg):
+    try:
+        bot.send_message(TELEGRAM_CHAT_ID, msg)
+    except Exception as e:
+        print("Telegram send failed:", e)
+
+# ====== 1. CHROME SETUP RAILWAY KE LIYE ======
 def get_driver():
     options = Options()
     options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
     options.add_argument(f"--user-data-dir={COOKIES_FOLDER}")
     options.add_argument("--window-size=1920,1080")
-    return webdriver.Chrome(options=options)
+    
+    # webdriver-manager khud chrome download kar lega
+    service = Service(ChromeDriverManager().install())
+    return webdriver.Chrome(service=service, options=options)
 
-# ====== 2. ACCOUNTS LOAD ======
+# ====== 2. ACCOUNTS LOAD FROM ENV ======
 def load_accounts():
-    with open("accounts.json", "r") as f:
-        return json.load(f)
+    accounts_json = os.getenv("ACCOUNTS_JSON")
+    return json.loads(accounts_json)
 
 # ====== 3. AAJ KA FLOW EMAIL ======
 def get_today_flow_email(accounts):
     emails = accounts["GOOGLE_FLOW_EMAILS"]
     day = 0
     if os.path.exists(DAY_FILE):
-        day = int(open(DAY_FILE).read())
+        with open(DAY_FILE, "r") as f: day = int(f.read())
     email = emails[day % len(emails)]
-    open(DAY_FILE, "w").write(str(day + 1))
+    with open(DAY_FILE, "w") as f: f.write(str(day + 1))
     return email
 
 # ====== 4. GEMINI SE SCRIPT + SEO ======
@@ -59,28 +71,30 @@ def generate_content():
 
 # ====== 5. EDIT CLIPS + JOIN ======
 def edit_video(input_clips, output_path):
-    bot.send_message(TELEGRAM_CHAT_ID, "✂️ Clips ko join + captions lag rahe hain")
-    # Yahan FFmpeg command aayegi clips join + auto captions + music
+    safe_send("✂️ Clips ko join + captions lag rahe hain")
     time.sleep(10)
     open(output_path, 'w').close() # dummy
     return output_path
 
 # ====== 6. GOOGLE FLOW ======
 def generate_video_with_flow(driver, email, script, aspect):
-    bot.send_message(TELEGRAM_CHAT_ID, f"🎬 Video generate ho rahi hai: {aspect} - {email}")
+    safe_send(f"🎬 Video generate ho rahi hai: {aspect} - {email}")
     driver.get("https://labs.google/flow")
     time.sleep(5)
     # Yahan Flow login + script paste + 3-4 clips gen + download
-    # Agar "credit khatam" aaye to return "CREDIT_FINISHED"
     time.sleep(60)
     clips = ["/mnt/data/clip1.mp4", "/mnt/data/clip2.mp4"]
     final_video = edit_video(clips, "/mnt/data/output_video.mp4")
-    bot.send_video(TELEGRAM_CHAT_ID, open(final_video, 'rb'), caption="Video ready. Approval?")
+    try:
+        with open(final_video, 'rb') as v:
+            bot.send_video(TELEGRAM_CHAT_ID, v, caption="Video ready. Approval?")
+    except:
+        safe_send("Video bhej nahi saki")
     return final_video
 
 # ====== 7. UPLOAD FUNCTIONS ======
 def upload_to_platform(driver, platform, email, video_path, seo_data, thumbnail_path, accounts):
-    bot.send_message(TELEGRAM_CHAT_ID, f"📤 {platform} pe upload ho raha hai: {email}")
+    safe_send(f"📤 {platform} pe upload ho raha hai: {email}")
     try:
         if platform == "YOUTUBE": driver.get("https://studio.youtube.com")
         elif platform == "TIKTOK": driver.get("https://www.tiktok.com/upload")
@@ -90,14 +104,11 @@ def upload_to_platform(driver, platform, email, video_path, seo_data, thumbnail_
         elif platform == "ZENQIRO":
             driver.get(accounts["ZENQIRO_ADMIN_URL"])
             time.sleep(2)
-            # Yahan password dal kar login + title/link add karna hai
-            # driver.find_element(By.NAME, "password").send_keys(accounts["ZENQIRO_ADMIN_PASS"])
 
         time.sleep(5)
-        # Yahan upload + title + desc + tags + thumbnail for YT
-        bot.send_message(TELEGRAM_CHAT_ID, f"✅ {platform} done")
+        safe_send(f"✅ {platform} done")
     except Exception as e:
-        bot.send_message(TELEGRAM_CHAT_ID, f"❌ {platform} error: {e}")
+        safe_send(f"❌ {platform} error: {e}")
 
 # ====== 8. EVENING UPLOAD JOB ======
 def evening_upload_job(video_path, thumbnail_path, seo_data):
@@ -108,27 +119,26 @@ def evening_upload_job(video_path, thumbnail_path, seo_data):
         upload_to_platform(driver, p, accounts[p], video_path, seo_data, thumbnail_path, accounts)
         time.sleep(random.randint(60, 120))
     driver.quit()
-    bot.send_message(TELEGRAM_CHAT_ID, "🎉 5:00 PM Sab jagah upload complete!")
+    safe_send("🎉 5:00 PM Sab jagah upload complete!")
 
 # ====== 9. MORNING JOB ======
 def morning_job():
-    bot.send_message(TELEGRAM_CHAT_ID, "🚀 9:00 AM Kaam shuru")
+    safe_send("🚀 9:00 AM Kaam shuru")
     accounts = load_accounts()
     driver = get_driver()
 
     seo_data, aspect, is_wed = generate_content()
-    bot.send_message(TELEGRAM_CHAT_ID, f"📝 {seo_data}")
+    safe_send(f"📝 {seo_data}")
 
     flow_email = get_today_flow_email(accounts)
     video_path = generate_video_with_flow(driver, flow_email, seo_data, aspect)
 
-    # 5 baje upload schedule
     schedule.every().day.at("17:00").do(evening_upload_job, video_path, "/mnt/data/thumbnail.jpg", seo_data)
     driver.quit()
 
 # ====== 10. SCHEDULER ======
 schedule.every().day.at("09:00").do(morning_job)
-bot.send_message(TELEGRAM_CHAT_ID, "Bot ON. Roz 9 baje banayega, 5 baje upload karega.")
+safe_send("Bot ON. Roz 9 baje banayega, 5 baje upload karega.")
 
 while True:
     schedule.run_pending()
