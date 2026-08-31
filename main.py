@@ -5,7 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service # NAYA
 from webdriver_manager.chrome import ChromeDriverManager # NAYA
-import google.generativeai as genai
+from google import genai # <-- 1. PURANA HATA DIYA
 import telebot
 
 # ====== SETTINGS ======
@@ -17,7 +17,7 @@ DAY_FILE = "/mnt/data/day_counter.txt"
 WEB_LINK = os.getenv("ZENQIRO_URL")
 
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
-genai.configure(api_key=GEMINI_API_KEY)
+client = genai.Client(api_key=GEMINI_API_KEY) # <-- 2. YE NAYA LAGA DIYA
 
 def safe_send(msg):
     try:
@@ -56,7 +56,6 @@ def get_today_flow_email(accounts):
 
 # ====== 4. GEMINI SE SCRIPT + SEO ======
 def generate_content():
-    model = genai.GenerativeModel("gemini-1.5-flash")
     is_wed = datetime.now().weekday() == 2 # 2 = Wednesday
 
     if is_wed:
@@ -66,7 +65,10 @@ def generate_content():
         prompt = f"Give 1 viral animal funny SHORT video topic. Max 50 seconds. Niche: animals. Return in Urdu. Format: Topic: xxx \n Script: xxx \n Title: xxx | Watch More: {WEB_LINK} \n Description: xxx \n Watch full videos: {WEB_LINK} \n Tags: xxx \n Hashtags: xxx"
         aspect = "9:16"
 
-    res = model.generate_content(prompt)
+    res = client.models.generate_content( # <-- 3. YE NAYA TARIKA
+        model="gemini-2.0-flash", 
+        contents=prompt
+    )
     return res.text, aspect, is_wed
 
 # ====== 5. EDIT CLIPS + JOIN ======
