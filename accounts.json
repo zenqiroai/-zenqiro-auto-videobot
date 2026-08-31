@@ -11,13 +11,15 @@
     "brandsyed332@gmail.com",
     "alisyedzadashah@gmail.com"
   ],
-  "YOUTUBE": "zenqirobot@gmail.com",
-  "TIKTOK": "syedtoqeerjafar@gmail.com",
-  "INSTAGRAM": "zenqirobot@gmail.com",
-  "FACEBOOK": "toqeerjafar@gmail.com",
+  "PLATFORMS": {
+    "YOUTUBE": "zenqirobot@gmail.com",
+    "TIKTOK": "syedtoqeerjafar@gmail.com",
+    "INSTAGRAM": "zenqirobot@gmail.com",
+    "FACEBOOK": "toqeerjafar@gmail.com",
+    "SNAPCHAT": "brandsyed332@gmail.com",
+    "ZENQIRO": "zenqirobot@gmail.com"
+  },
   "FACEBOOK_PAGE_URL": "https://www.facebook.com/profile.php?id=61594018438324",
-  "SNAPCHAT": "brandsyed332@gmail.com",
-  "ZENQIRO": "zenqirobot@gmail.com",
   "ZENQIRO_ADMIN_URL": "https://web-production-2368d.up.railway.app/admin",
   "ZENQIRO_ADMIN_PASS": "03245660742"
 }
