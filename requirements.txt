@@ -1,4 +1,4 @@
-google-generativeai
+google-genai
 pyTelegramBotAPI
 apscheduler==3.10.4
 moviepy
