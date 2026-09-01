@@ -17,7 +17,7 @@ TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 COOKIES_FOLDER = "/tmp/cookies"
 HISTORY_FILE = "/tmp/video_history.json"
 WEB_LINK = os.getenv("ZENQIRO_URL")
-VIDEO_READY_FILE = "/tmp/video_ready.json" # NAYA: video yahan save hogi
+VIDEO_READY_FILE = "/tmp/video_ready.json"
 
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 client = genai.Client(api_key=GEMINI_API_KEY)
@@ -48,16 +48,13 @@ def load_history():
 def save_history(history):
     with open(HISTORY_FILE, "w") as f: json.dump(history, f)
 
-# ====== 3. CHROME SETUP ======
+# ====== 3. CHROME SETUP - FIXED FOR RAILWAY ======
 def get_driver():
     options = Options()
     options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
-    options.add_argument("--disable-dev-tools")
-    options.add_argument("--no-zygote")
-    options.add_argument("--single-process")
     options.add_argument(f"--user-data-dir={COOKIES_FOLDER}")
     options.add_argument("--window-size=1920,1080")
     options.binary_location = "/usr/bin/chromium"
