@@ -3,7 +3,6 @@ from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
 from google import genai
 import telebot
 
@@ -61,9 +60,8 @@ def get_driver():
     options.add_argument("--window-size=1920,1080")
     options.binary_location = "/usr/bin/chromium"
 
-    service = Service("/usr/bin/chromedriver") # <-- DIRECT PATH
-    safe_send("✅ Using chromedriver: /usr/bin/chromedriver")
-    return webdriver.Chrome(service=service, options=options)
+    safe_send("✅ Starting Chrome driver...")
+    return webdriver.Chrome(options=options) # <-- SERVICE HATA DIYA. SELENIUM KHUD DHUNDEGA
 
 # ====== 4. GEMINI SCRIPT ======
 def generate_content():
