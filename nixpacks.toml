@@ -1,8 +1,5 @@
 [phases.setup]
-nixPkgs = ["chromium", "chromedriver", "glibc", "nss", "atk", "cups", "dbus", "libdrm", "libxkbcommon", "libxcomposite", "libxdamage", "libxfixes", "libxrandr", "mesa", "pango", "cairo", "gdk-pixbuf"]
-
-[phases.install]
-cmds = ["pip install -r requirements.txt"]
+nixPkgs = ["chromium", "chromedriver"]
 
 [start]
 cmd = "python main.py"

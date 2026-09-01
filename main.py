@@ -7,18 +7,17 @@ from selenium.webdriver.chrome.service import Service
 from google import genai
 import telebot
 
-# ====== FOLDERS BANANE HAIN ======
-os.makedirs("/mnt/data/cookies", exist_ok=True)
+# ====== FOLDERS BANANE HAIN - /tmp USE KARENGE ======
+os.makedirs("/tmp/cookies", exist_ok=True)
 
 # ====== SETTINGS ======
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-COOKIES_FOLDER = "/mnt/data/cookies"
-HISTORY_FILE = "/mnt/data/video_history.json"
+COOKIES_FOLDER = "/tmp/cookies"
+HISTORY_FILE = "/tmp/video_history.json"
 WEB_LINK = os.getenv("ZENQIRO_URL")
-ACCOUNTS_FILE = "/mnt/data/accounts.json"
-VIDEO_READY_FILE = "/mnt/data/video_ready.json" # NAYA: video yahan save hogi
+VIDEO_READY_FILE = "/tmp/video_ready.json" # NAYA: video yahan save hogi
 
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 client = genai.Client(api_key=GEMINI_API_KEY)
@@ -32,18 +31,13 @@ def handle_error(e):
     safe_send(error_msg)
     print(error_msg)
 
-# ====== 1. ACCOUNTS.JSON ======
+# ====== 1. ACCOUNTS.JSON - AB VARIABLE SE AAYEGA ======
 def load_accounts():
-    if not os.path.exists(ACCOUNTS_FILE):
-        default = {
-            "GOOGLE_FLOW_EMAILS": ["email1@gmail.com", "email2@gmail.com"],
-            "PLATFORMS": {"YOUTUBE": "your_youtube_email"},
-            "ZENQIRO_ADMIN_URL": "https://yourwebsite.com/admin",
-            "FACEBOOK_PAGE_URL": "https://facebook.com/yourpage"
-        }
-        with open(ACCOUNTS_FILE, 'w') as f: json.dump(default, f)
-        safe_send("⚠️ accounts.json nahi thi. Default bana di")
-    with open(ACCOUNTS_FILE, 'r') as f: return json.load(f)
+    accounts_json = os.getenv("ACCOUNTS_JSON")
+    if not accounts_json:
+        safe_send("❌ ACCOUNTS_JSON variable nahi mila Railway me")
+        return {}
+    return json.loads(accounts_json)
 
 # ====== 2. HISTORY ======
 def load_history():
@@ -138,7 +132,7 @@ def generate_video_with_flow(driver, accounts, script, aspect, is_wed):
 
         safe_send(f"Script paste kar di: {script[:50]}...")
         time.sleep(90)
-        clips_generated.append(f"/mnt/data/clip_{i+1}.mp4")
+        clips_generated.append(f"/tmp/clip_{i+1}.mp4")
 
         page_text = driver.page_source.lower()
         if "credit" in page_text or "limit" in page_text:
@@ -153,7 +147,7 @@ def generate_video_with_flow(driver, accounts, script, aspect, is_wed):
         safe_send("❌ 10 account bhi lag gaye. Koi credits nahi bachi")
         return None
 
-    final_video = edit_video(clips_generated, "/mnt/data/output_video.mp4")
+    final_video = edit_video(clips_generated, "/tmp/output_video.mp4")
     try:
         with open(final_video, 'rb') as v:
             bot.send_video(TELEGRAM_CHAT_ID, v, caption=f"Video ready. {len(clips_generated)} clips. 5PM ka wait kar rahe.")
@@ -186,11 +180,10 @@ def morning_job():
 
         flow_accounts = []
         for i, email in enumerate(accounts["GOOGLE_FLOW_EMAILS"]):
-            flow_accounts.append({"email": email, "cookies_path": f"/mnt/data/cookies_{i+1}.json"})
+            flow_accounts.append({"email": email, "cookies_path": f"/tmp/cookies_{i+1}.json"})
 
         video_path = generate_video_with_flow(driver, flow_accounts, seo_data, aspect, is_wed)
         if video_path:
-            # Video ka data save kar do taake 5PM ko upload ho
             with open(VIDEO_READY_FILE, 'w') as f:
                 json.dump({"video_path": video_path, "seo_data": seo_data}, f)
             safe_send("💾 Video save ho gayi. 5PM ka wait...")
@@ -213,10 +206,10 @@ def evening_job():
         accounts = load_accounts()
         driver = get_driver()
         for p, email in accounts["PLATFORMS"].items():
-            upload_to_platform(driver, p, email, data["video_path"], data["seo_data"], "/mnt/data/thumbnail.jpg", accounts)
+            upload_to_platform(driver, p, email, data["video_path"], data["seo_data"], "/tmp/thumbnail.jpg", accounts)
             time.sleep(random.randint(60, 120))
         safe_send("🎉 5:00 PM Sab jagah upload complete!")
-        os.remove(VIDEO_READY_FILE) # Upload ke baad file delete
+        os.remove(VIDEO_READY_FILE)
     except Exception as e:
         handle_error(e)
     finally:
@@ -227,8 +220,8 @@ if __name__ == "__main__":
     now = datetime.now().hour
     safe_send("Bot ON.")
 
-    if now < 17: # 5PM se pehle hai to banao
+    if now < 17:
         morning_job()
-    else: # 5PM ke baad hai to foran upload
+    else:
         safe_send("5PM guzar chuka hai. Foran upload kar raha hun")
         evening_job()
