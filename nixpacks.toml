@@ -1,5 +1,32 @@
 [phases.setup]
-nixPkgs = ["chromium", "chromedriver", "nss", "nspr", "atk", "dbus", "libxkbcommon", "libXcomposite", "libXdamage", "libXfixes", "libXrandr", "libgbm", "libdrm", "libxcb", "libxshmfence", "libX11", "libXext", "cairo", "pango", "gdk-pixbuf", "alsa-lib"]
+nixPkgs = [
+  "chromium",
+  "nss",
+  "nspr",
+  "atk",
+  "dbus",
+  "libxkbcommon",
+  "libXcomposite",
+  "libXdamage",
+  "libXfixes",
+  "libXrandr",
+  "libgbm",
+  "libdrm",
+  "libxcb",
+  "libxshmfence",
+  "libX11",
+  "libXext",
+  "cairo",
+  "pango",
+  "gdk-pixbuf",
+  "alsa-lib"
+]
+
+[phases.install]
+cmds = [
+  "ln -s $(which chromium) /usr/bin/chromium",
+  "find /nix/store -name chromedriver -exec ln -s {} /usr/bin/chromedriver \\;"
+]
 
 [start]
 cmd = "python main.py"

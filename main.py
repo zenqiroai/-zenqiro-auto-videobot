@@ -1,4 +1,4 @@
-import os, json, time, random, pickle, hashlib, traceback, shutil
+import os, json, time, random, pickle, hashlib, traceback
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -61,12 +61,8 @@ def get_driver():
     options.add_argument("--window-size=1920,1080")
     options.binary_location = "/usr/bin/chromium"
 
-    chromedriver_path = shutil.which("chromedriver") # <-- NAYA: PATH KHUD DHUNDEGA
-    if not chromedriver_path:
-        raise Exception("chromedriver not found in PATH. Check nixpacks.toml")
-    safe_send(f"✅ Found chromedriver at: {chromedriver_path}")
-
-    service = Service(chromedriver_path)
+    service = Service("/usr/bin/chromedriver") # <-- DIRECT PATH
+    safe_send("✅ Using chromedriver: /usr/bin/chromedriver")
     return webdriver.Chrome(service=service, options=options)
 
 # ====== 4. GEMINI SCRIPT ======
