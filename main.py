@@ -3,6 +3,7 @@ from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service # <-- WAPIS ADD
 from google import genai
 import telebot
 
@@ -47,7 +48,7 @@ def load_history():
 def save_history(history):
     with open(HISTORY_FILE, "w") as f: json.dump(history, f)
 
-# ====== 3. CHROME SETUP - SELENIUM MANAGER WALA ======
+# ====== 3. CHROME SETUP - NIX WALA DRIVER FORCE ======
 def get_driver():
     options = Options()
     options.add_argument("--headless=new")
@@ -61,8 +62,11 @@ def get_driver():
     options.add_argument("--remote-allow-origins=*")
     options.binary_location = "/usr/bin/chromium"
 
-    safe_send("✅ Starting Chrome driver... Selenium khud download karega")
-    return webdriver.Chrome(options=options) # <-- SERVICE BILKUL NAHI HAI
+    # NIX WALA CHROMEDRIVER FORCE
+    service = Service(executable_path="/usr/bin/chromedriver")
+    
+    safe_send("✅ Starting Chrome driver...")
+    return webdriver.Chrome(service=service, options=options)
 
 # ====== 4. GEMINI SCRIPT ======
 def generate_content():

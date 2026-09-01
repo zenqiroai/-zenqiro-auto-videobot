@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["chromium", "nss", "nspr", "atk", "dbus", "libxkbcommon", "libXcomposite", "libXdamage", "libXfixes", "libXrandr", "libgbm", "libdrm", "libxcb", "libxshmfence", "libX11", "libXext", "cairo", "pango", "gdk-pixbuf", "alsa-lib"]
+nixPkgs = ["chromium", "chromium-driver", "nss", "nspr", "atk", "dbus", "libxkbcommon", "libXcomposite", "libXdamage", "libXfixes", "libXrandr", "libgbm", "libdrm", "libxcb", "libxshmfence", "libX11", "libXext", "cairo", "pango", "gdk-pixbuf", "alsa-lib"]
 
 [start]
 cmd = "python main.py"
