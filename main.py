@@ -1,10 +1,9 @@
-import os, json, time, random, schedule, pickle, hashlib
+import os, json, time, random, pickle, hashlib, traceback
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 from google import genai
 import telebot
 
@@ -16,9 +15,10 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 COOKIES_FOLDER = "/mnt/data/cookies"
-HISTORY_FILE = "/mnt/data/video_history.json" # DUPLICATE ROKNE KE LIYE
+HISTORY_FILE = "/mnt/data/video_history.json"
 WEB_LINK = os.getenv("ZENQIRO_URL")
 ACCOUNTS_FILE = "/mnt/data/accounts.json"
+VIDEO_READY_FILE = "/mnt/data/video_ready.json" # NAYA: video yahan save hogi
 
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 client = genai.Client(api_key=GEMINI_API_KEY)
@@ -27,7 +27,12 @@ def safe_send(msg):
     try: bot.send_message(TELEGRAM_CHAT_ID, msg)
     except Exception as e: print("Telegram send failed:", e)
 
-# ====== 1. ACCOUNTS.JSON NA HO TO KHUD BANA DE ======
+def handle_error(e):
+    error_msg = f"❌ BOT CRASH: \n{str(e)[:500]}\n\n{traceback.format_exc()[:800]}"
+    safe_send(error_msg)
+    print(error_msg)
+
+# ====== 1. ACCOUNTS.JSON ======
 def load_accounts():
     if not os.path.exists(ACCOUNTS_FILE):
         default = {
@@ -37,10 +42,10 @@ def load_accounts():
             "FACEBOOK_PAGE_URL": "https://facebook.com/yourpage"
         }
         with open(ACCOUNTS_FILE, 'w') as f: json.dump(default, f)
-        safe_send("⚠️ accounts.json nahi thi. Default bana di. Railway me ja ke emails update karo")
+        safe_send("⚠️ accounts.json nahi thi. Default bana di")
     with open(ACCOUNTS_FILE, 'r') as f: return json.load(f)
 
-# ====== 2. HISTORY LOAD/SAVE - DUPLICATE ROKNE KE LIYE ======
+# ====== 2. HISTORY ======
 def load_history():
     if os.path.exists(HISTORY_FILE):
         with open(HISTORY_FILE, "r") as f: return json.load(f)
@@ -56,15 +61,19 @@ def get_driver():
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
+    options.add_argument("--disable-dev-tools")
+    options.add_argument("--no-zygote")
+    options.add_argument("--single-process")
     options.add_argument(f"--user-data-dir={COOKIES_FOLDER}")
     options.add_argument("--window-size=1920,1080")
-    service = Service(ChromeDriverManager().install())
+    options.binary_location = "/usr/bin/chromium"
+    service = Service("/usr/bin/chromedriver")
     return webdriver.Chrome(service=service, options=options)
 
-# ====== 4. GEMINI UNIQUE SCRIPT ======
+# ====== 4. GEMINI SCRIPT ======
 def generate_content():
     history = load_history()
-    is_wed = datetime.now().weekday() == 2 # Wednesday = long video
+    is_wed = datetime.now().weekday() == 2
     avoid_text = ""
     if history["topics"]:
         avoid_text = f"Avoid these last 10 topics: {', '.join(history['topics'][-10:])}"
@@ -79,7 +88,6 @@ def generate_content():
     res = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
     data = res.text
 
-    # History me save
     try:
         topic = data.split("Topic:")[1].split("\n")[0].strip()
         script_hash = hashlib.md5(data.split("Script:")[1].encode()).hexdigest()
@@ -94,10 +102,10 @@ def generate_content():
 def edit_video(input_clips, output_path):
     safe_send(f"✂️ {len(input_clips)} clips ko join + captions lag rahe hain")
     time.sleep(10)
-    open(output_path, 'w').close() # dummy file for now
+    open(output_path, 'w').close()
     return output_path
 
-# ====== 6. COOKIES FUNCTIONS ======
+# ====== 6. COOKIES ======
 def save_cookies(driver, path):
     with open(path, 'wb') as f: pickle.dump(driver.get_cookies(), f)
 
@@ -108,7 +116,7 @@ def load_cookies(driver, path):
         return True
     except: return False
 
-# ====== 7. GOOGLE FLOW AUTO SWITCH - 10 ACCOUNT TAK JAYEGA ======
+# ====== 7. GOOGLE FLOW ======
 def generate_video_with_flow(driver, accounts, script, aspect, is_wed):
     clips_needed = 5 if is_wed else 2
     clips_generated = []
@@ -125,15 +133,13 @@ def generate_video_with_flow(driver, accounts, script, aspect, is_wed):
             driver.refresh(); time.sleep(5)
         else:
             safe_send(f"⚠️ LOGIN REQUIRED: {email}. 5 min do login karne ke liye")
-            time.sleep(300) # 5 min for manual login first time
+            time.sleep(300)
             save_cookies(driver, cookies_path)
 
-        # Yahan script paste + generate ka code aayega
         safe_send(f"Script paste kar di: {script[:50]}...")
         time.sleep(90)
         clips_generated.append(f"/mnt/data/clip_{i+1}.mp4")
 
-        # CREDIT KHATAM CHECK
         page_text = driver.page_source.lower()
         if "credit" in page_text or "limit" in page_text:
             safe_send(f"❌ {email} credits khatam. Next account...")
@@ -150,7 +156,7 @@ def generate_video_with_flow(driver, accounts, script, aspect, is_wed):
     final_video = edit_video(clips_generated, "/mnt/data/output_video.mp4")
     try:
         with open(final_video, 'rb') as v:
-            bot.send_video(TELEGRAM_CHAT_ID, v, caption=f"New video ready. {len(clips_generated)} clips. Approval?")
+            bot.send_video(TELEGRAM_CHAT_ID, v, caption=f"Video ready. {len(clips_generated)} clips. 5PM ka wait kar rahe.")
     except: safe_send("Video bhej nahi saki")
     return final_video
 
@@ -168,37 +174,61 @@ def upload_to_platform(driver, platform, email, video_path, seo_data, thumbnail_
         safe_send(f"✅ {platform} done")
     except Exception as e: safe_send(f"❌ {platform} error: {e}")
 
-# ====== 9. EVENING JOB ======
-def evening_upload_job(video_path, thumbnail_path, seo_data):
-    accounts = load_accounts()
-    driver = get_driver()
-    for p, email in accounts["PLATFORMS"].items():
-        upload_to_platform(driver, p, email, video_path, seo_data, thumbnail_path, accounts)
-        time.sleep(random.randint(60, 120))
-    driver.quit()
-    safe_send("🎉 5:00 PM Sab jagah upload complete!")
-
-# ====== 10. MORNING JOB ======
+# ====== 9. MORNING JOB - SIRF BANANA ======
 def morning_job():
-    safe_send("🚀 9:00 AM Kaam shuru")
-    accounts = load_accounts()
-    driver = get_driver()
-    seo_data, aspect, is_wed = generate_content()
-    safe_send(f"📝 Script bana: {seo_data[:100]}")
+    safe_send("🚀 5:00 AM Video banana shuru")
+    driver = None
+    try:
+        accounts = load_accounts()
+        driver = get_driver()
+        seo_data, aspect, is_wed = generate_content()
+        safe_send(f"📝 Script bana: {seo_data[:100]}")
 
-    # 10 accounts ki list banao
-    flow_accounts = []
-    for i, email in enumerate(accounts["GOOGLE_FLOW_EMAILS"]):
-        flow_accounts.append({"email": email, "cookies_path": f"/mnt/data/cookies_{i+1}.json"})
+        flow_accounts = []
+        for i, email in enumerate(accounts["GOOGLE_FLOW_EMAILS"]):
+            flow_accounts.append({"email": email, "cookies_path": f"/mnt/data/cookies_{i+1}.json"})
 
-    video_path = generate_video_with_flow(driver, flow_accounts, seo_data, aspect, is_wed)
-    if video_path:
-        schedule.every().day.at("17:00").do(evening_upload_job, video_path, "/mnt/data/thumbnail.jpg", seo_data)
-    driver.quit()
+        video_path = generate_video_with_flow(driver, flow_accounts, seo_data, aspect, is_wed)
+        if video_path:
+            # Video ka data save kar do taake 5PM ko upload ho
+            with open(VIDEO_READY_FILE, 'w') as f:
+                json.dump({"video_path": video_path, "seo_data": seo_data}, f)
+            safe_send("💾 Video save ho gayi. 5PM ka wait...")
+    except Exception as e:
+        handle_error(e)
+    finally:
+        if driver: driver.quit()
 
-# ====== 11. SCHEDULER ======
-schedule.every().day.at("09:00").do(morning_job)
-safe_send("Bot ON. Roz 9 baje banayega, 5 baje upload karega.")
-while True:
-    schedule.run_pending()
-    time.sleep(60)
+# ====== 10. EVENING JOB - SIRF UPLOAD ======
+def evening_job():
+    if not os.path.exists(VIDEO_READY_FILE):
+        safe_send("⚠️ 5PM: Koi video ready nahi hai upload ke liye")
+        return
+
+    safe_send("🚀 5:00 PM Upload shuru")
+    driver = None
+    try:
+        with open(VIDEO_READY_FILE, 'r') as f: data = json.load(f)
+
+        accounts = load_accounts()
+        driver = get_driver()
+        for p, email in accounts["PLATFORMS"].items():
+            upload_to_platform(driver, p, email, data["video_path"], data["seo_data"], "/mnt/data/thumbnail.jpg", accounts)
+            time.sleep(random.randint(60, 120))
+        safe_send("🎉 5:00 PM Sab jagah upload complete!")
+        os.remove(VIDEO_READY_FILE) # Upload ke baad file delete
+    except Exception as e:
+        handle_error(e)
+    finally:
+        if driver: driver.quit()
+
+# ====== 11. START ======
+if __name__ == "__main__":
+    now = datetime.now().hour
+    safe_send("Bot ON.")
+
+    if now < 17: # 5PM se pehle hai to banao
+        morning_job()
+    else: # 5PM ke baad hai to foran upload
+        safe_send("5PM guzar chuka hai. Foran upload kar raha hun")
+        evening_job()
