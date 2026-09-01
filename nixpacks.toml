@@ -1,5 +1,2 @@
-[phases.setup]
-nixPkgs = ["chromium"]
-
 [start]
 cmd = "python main.py"
