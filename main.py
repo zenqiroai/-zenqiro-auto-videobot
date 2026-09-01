@@ -62,8 +62,8 @@ def get_driver():
     options.add_argument("--remote-allow-origins=*")
     options.add_argument("--disable-setuid-sandbox")
     options.add_argument("--disable-blink-features=AutomationControlled")
-    options.binary_location = "/usr/bin/chromium"
-    
+    options.binary_location = "/usr/bin/google-chrome" # <-- SIRF YE LINE CHANGE KI
+
     safe_send("✅ Starting Chrome driver... Selenium khud download karega")
     return webdriver.Chrome(options=options) # <-- SERVICE HATA DIYA
 
