@@ -1,3 +1,4 @@
 selenium
 google-genai
 pyTelegramBotAPI
+selenium==4.22.0
