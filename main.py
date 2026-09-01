@@ -3,7 +3,7 @@ from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service # WAPIS
+from selenium.webdriver.chrome.service import Service
 from google import genai
 import telebot
 
@@ -48,7 +48,7 @@ def load_history():
 def save_history(history):
     with open(HISTORY_FILE, "w") as f: json.dump(history, f)
 
-# ====== 3. CHROME SETUP - NIX WALA DRIVER FORCE ======
+# ====== 3. CHROME SETUP - RAILWAY FIXED ======
 def get_driver():
     options = Options()
     options.add_argument("--headless=new")
@@ -56,9 +56,16 @@ def get_driver():
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
     options.add_argument("--disable-extensions")
+    options.add_argument("--disable-software-rasterizer")
     options.add_argument(f"--user-data-dir={COOKIES_FOLDER}")
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--remote-allow-origins=*")
+    
+    # YE 3 FLAGS RAILWAY KE LIYE ZAROORI HAIN
+    options.add_argument("--disable-setuid-sandbox")
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_argument("--single-process")
+    
     options.binary_location = "/usr/bin/chromium"
 
     service = Service(executable_path="/usr/bin/chromedriver")
