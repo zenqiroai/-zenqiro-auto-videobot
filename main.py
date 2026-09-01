@@ -4,8 +4,8 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager # <-- NAYA
-from webdriver_manager.core.utils import ChromeType # <-- NAYA
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.core.os_manager import ChromeType # <-- YE LINE CHANGE: utils -> os_manager
 from google import genai
 import telebot
 
@@ -59,10 +59,9 @@ def get_driver():
     options.add_argument("--disable-gpu")
     options.add_argument(f"--user-data-dir={COOKIES_FOLDER}")
     options.add_argument("--window-size=1920,1080")
-    # options.binary_location wali line HATA DI
 
-    chrome_path = ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install() # <-- NAYA
-    service = Service(chrome_path) # <-- NAYA
+    chrome_path = ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()
+    service = Service(chrome_path)
     return webdriver.Chrome(service=service, options=options)
 
 # ====== 4. GEMINI SCRIPT ======
