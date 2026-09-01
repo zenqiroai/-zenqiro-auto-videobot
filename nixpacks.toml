@@ -1,8 +1,8 @@
 [phases.setup]
-nixPkgs = ["chromium", "nss", "nspr", "atk", "dbus", "libxkbcommon", "libXcomposite", "libXdamage", "libXfixes", "libXrandr", "libgbm", "libdrm", "libxcb", "libxshmfence", "libX11", "libXext", "cairo", "pango", "gdk-pixbuf", "alsa-lib"]
+nixPkgs = ["python311", "python311Packages.pip", "chromium", "chromium-driver", "nss", "nspr", "atk", "dbus", "libxkbcommon", "libXcomposite", "libXdamage", "libXfixes", "libXrandr", "libgbm", "libdrm", "libxcb", "libxshmfence", "libX11", "libXext", "cairo", "pango", "gdk-pixbuf", "alsa-lib"]
 
 [phases.install]
-cmds = ["pip install -r requirements.txt"] # <-- YE ADD
+cmds = ["python3.11 -m pip install -r requirements.txt"]
 
 [start]
-cmd = "python main.py"
+cmd = "python3.11 main.py"
