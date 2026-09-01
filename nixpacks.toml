@@ -1,5 +1,8 @@
 [phases.setup]
 nixPkgs = ["chromium", "nss", "nspr", "atk", "dbus", "libxkbcommon", "libXcomposite", "libXdamage", "libXfixes", "libXrandr", "libgbm", "libdrm", "libxcb", "libxshmfence", "libX11", "libXext", "cairo", "pango", "gdk-pixbuf", "alsa-lib"]
 
+[phases.install]
+cmds = ["pip install -r requirements.txt"] # <-- YE ADD
+
 [start]
 cmd = "python main.py"
