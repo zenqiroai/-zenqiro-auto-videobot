@@ -1,9 +1,7 @@
 import os, json, time, random, pickle, hashlib, traceback
 from datetime import datetime
-from selenium import webdriver
+import undetected_chromedriver as uc # <-- NAYA IMPORT
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service # <-- WAPIS ADD
 from google import genai
 import telebot
 
@@ -48,25 +46,19 @@ def load_history():
 def save_history(history):
     with open(HISTORY_FILE, "w") as f: json.dump(history, f)
 
-# ====== 3. CHROME SETUP - NIX WALA DRIVER FORCE ======
+# ====== 3. CHROME SETUP - UC WALA ======
 def get_driver():
-    options = Options()
+    options = uc.ChromeOptions() # <-- uc use
     options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
-    options.add_argument("--disable-extensions")
-    options.add_argument("--disable-software-rasterizer")
     options.add_argument(f"--user-data-dir={COOKIES_FOLDER}")
     options.add_argument("--window-size=1920,1080")
-    options.add_argument("--remote-allow-origins=*")
     options.binary_location = "/usr/bin/chromium"
 
-    # NIX WALA CHROMEDRIVER FORCE
-    service = Service(executable_path="/usr/bin/chromedriver")
-    
-    safe_send("✅ Starting Chrome driver...")
-    return webdriver.Chrome(service=service, options=options)
+    safe_send("✅ Starting UC Chrome driver...")
+    return uc.Chrome(options=options, version_main=None) # <-- version auto detect
 
 # ====== 4. GEMINI SCRIPT ======
 def generate_content():
