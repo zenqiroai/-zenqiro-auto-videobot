@@ -62,10 +62,10 @@ def get_driver():
     options.add_argument("--remote-allow-origins=*")
     options.add_argument("--disable-setuid-sandbox")
     options.add_argument("--disable-blink-features=AutomationControlled")
-    options.binary_location = "/usr/bin/google-chrome" # <-- SIRF YE LINE CHANGE KI
+    options.binary_location = "/usr/bin/google-chrome"
 
     safe_send("✅ Starting Chrome driver... Selenium khud download karega")
-    return webdriver.Chrome(options=options) # <-- SERVICE HATA DIYA
+    return webdriver.Chrome(options=options)
 
 # ====== 4. GEMINI SCRIPT ======
 def generate_content():
@@ -82,7 +82,7 @@ def generate_content():
         prompt = f"Give 1 viral animal funny SHORT video topic. Max 50 seconds. Niche: animals. {avoid_text} Return in Urdu. Format: Topic: xxx \n Script: xxx \n Title: xxx | Watch More: {WEB_LINK} \n Description: xxx \n Watch full videos: {WEB_LINK} \n Tags: xxx \n Hashtags: xxx"
         aspect = "9:16"
 
-    res = client.models.generate_content(model="gemini-2.0-flash", contents=prompt)
+    res = client.models.generate_content(model="gemini-3.6-flash", contents=prompt) # <-- YE CHANGE HAI
     data = res.text
 
     try:
