@@ -1,4 +1,4 @@
-import os, json, time, random, pickle, hashlib, traceback
+import os, json, time, random, pickle, hashlib, traceback, shutil
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -59,9 +59,14 @@ def get_driver():
     options.add_argument("--disable-software-rasterizer")
     options.add_argument(f"--user-data-dir={COOKIES_FOLDER}")
     options.add_argument("--window-size=1920,1080")
-    options.binary_location = "/usr/bin/chromium" # NIX WALA CHROMIUM
+    options.binary_location = "/usr/bin/chromium"
 
-    service = Service("/usr/bin/chromedriver") # NIX WALA CHROMEDRIVER
+    chromedriver_path = shutil.which("chromedriver") # <-- NAYA: PATH KHUD DHUNDEGA
+    if not chromedriver_path:
+        raise Exception("chromedriver not found in PATH. Check nixpacks.toml")
+    safe_send(f"✅ Found chromedriver at: {chromedriver_path}")
+
+    service = Service(chromedriver_path)
     return webdriver.Chrome(service=service, options=options)
 
 # ====== 4. GEMINI SCRIPT ======
