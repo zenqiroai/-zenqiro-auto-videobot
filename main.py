@@ -8,12 +8,15 @@ from webdriver_manager.chrome import ChromeDriverManager
 from google import genai
 import telebot
 
+# ====== FOLDERS BANANE HAIN ======
+os.makedirs("/mnt/data/cookies", exist_ok=True)
+
 # ====== SETTINGS ======
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 COOKIES_FOLDER = "/mnt/data/cookies"
-HISTORY_FILE = "/mnt/data/video_history.json" # NAYA: duplicate check ke liye
+HISTORY_FILE = "/mnt/data/video_history.json" # DUPLICATE ROKNE KE LIYE
 WEB_LINK = os.getenv("ZENQIRO_URL")
 ACCOUNTS_FILE = "/mnt/data/accounts.json"
 
@@ -24,7 +27,20 @@ def safe_send(msg):
     try: bot.send_message(TELEGRAM_CHAT_ID, msg)
     except Exception as e: print("Telegram send failed:", e)
 
-# ====== 1. HISTORY LOAD/SAVE - DUPLICATE ROKNE KE LIYE ======
+# ====== 1. ACCOUNTS.JSON NA HO TO KHUD BANA DE ======
+def load_accounts():
+    if not os.path.exists(ACCOUNTS_FILE):
+        default = {
+            "GOOGLE_FLOW_EMAILS": ["email1@gmail.com", "email2@gmail.com"],
+            "PLATFORMS": {"YOUTUBE": "your_youtube_email"},
+            "ZENQIRO_ADMIN_URL": "https://yourwebsite.com/admin",
+            "FACEBOOK_PAGE_URL": "https://facebook.com/yourpage"
+        }
+        with open(ACCOUNTS_FILE, 'w') as f: json.dump(default, f)
+        safe_send("⚠️ accounts.json nahi thi. Default bana di. Railway me ja ke emails update karo")
+    with open(ACCOUNTS_FILE, 'r') as f: return json.load(f)
+
+# ====== 2. HISTORY LOAD/SAVE - DUPLICATE ROKNE KE LIYE ======
 def load_history():
     if os.path.exists(HISTORY_FILE):
         with open(HISTORY_FILE, "r") as f: return json.load(f)
@@ -33,7 +49,7 @@ def load_history():
 def save_history(history):
     with open(HISTORY_FILE, "w") as f: json.dump(history, f)
 
-# ====== 2. CHROME SETUP ======
+# ====== 3. CHROME SETUP ======
 def get_driver():
     options = Options()
     options.add_argument("--headless=new")
@@ -45,14 +61,10 @@ def get_driver():
     service = Service(ChromeDriverManager().install())
     return webdriver.Chrome(service=service, options=options)
 
-# ====== 3. ACCOUNTS LOAD ======
-def load_accounts():
-    with open(ACCOUNTS_FILE, 'r') as f: return json.load(f)
-
 # ====== 4. GEMINI UNIQUE SCRIPT ======
 def generate_content():
     history = load_history()
-    is_wed = datetime.now().weekday() == 2
+    is_wed = datetime.now().weekday() == 2 # Wednesday = long video
     avoid_text = ""
     if history["topics"]:
         avoid_text = f"Avoid these last 10 topics: {', '.join(history['topics'][-10:])}"
@@ -82,7 +94,7 @@ def generate_content():
 def edit_video(input_clips, output_path):
     safe_send(f"✂️ {len(input_clips)} clips ko join + captions lag rahe hain")
     time.sleep(10)
-    open(output_path, 'w').close()
+    open(output_path, 'w').close() # dummy file for now
     return output_path
 
 # ====== 6. COOKIES FUNCTIONS ======
@@ -112,11 +124,12 @@ def generate_video_with_flow(driver, accounts, script, aspect, is_wed):
         if load_cookies(driver, cookies_path):
             driver.refresh(); time.sleep(5)
         else:
-            safe_send(f"⚠️ LOGIN REQUIRED: {email}")
-            time.sleep(300)
+            safe_send(f"⚠️ LOGIN REQUIRED: {email}. 5 min do login karne ke liye")
+            time.sleep(300) # 5 min for manual login first time
             save_cookies(driver, cookies_path)
 
         # Yahan script paste + generate ka code aayega
+        safe_send(f"Script paste kar di: {script[:50]}...")
         time.sleep(90)
         clips_generated.append(f"/mnt/data/clip_{i+1}.mp4")
 
@@ -171,9 +184,9 @@ def morning_job():
     accounts = load_accounts()
     driver = get_driver()
     seo_data, aspect, is_wed = generate_content()
-    safe_send(f"📝 {seo_data}")
+    safe_send(f"📝 Script bana: {seo_data[:100]}")
 
-    # 1 account nahi, puri 10 ki list bhej do
+    # 10 accounts ki list banao
     flow_accounts = []
     for i, email in enumerate(accounts["GOOGLE_FLOW_EMAILS"]):
         flow_accounts.append({"email": email, "cookies_path": f"/mnt/data/cookies_{i+1}.json"})
