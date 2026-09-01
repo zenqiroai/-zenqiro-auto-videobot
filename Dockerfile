@@ -1,28 +1,11 @@
 FROM python:3.11.9-slim
 
-# Chrome aur dependencies install karo
-RUN apt-get update && apt-get install -y \
-    wget \
-    unzip \
-    xvfb \
-    libxi6 \
-    libgconf-2-4 \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y wget gnupg unzip xvfb libxi6 libglib2.0-0 libnss3 libxss1 libatk-bridge2.0-0 libgtk-3-0 --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
-# Google Chrome install
-RUN wget https://dl.google.com/linux/debian/stable/google-chrome-stable_current_amd64.deb
-RUN apt install -y ./google-chrome-stable_current_amd64.deb
-RUN rm google-chrome-stable_current_amd64.deb
+RUN wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/googlechrome-linux-keyring.gpg && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/googlechrome-linux-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list && apt-get update && apt-get install -y google-chrome-stable --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
-# App folder
 WORKDIR /app
-
-# Requirements install
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Baaki code copy
 COPY . .
-
-# Bot chalao
 CMD ["python", "main.py"]
