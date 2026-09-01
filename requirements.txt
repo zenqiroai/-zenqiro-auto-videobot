@@ -1,5 +1,5 @@
-selenium
+selenium==4.22.0
 google-genai
 pyTelegramBotAPI
-selenium==4.22.0
 setuptools<70
+webdriver-manager
