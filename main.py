@@ -3,6 +3,7 @@ from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service # <-- YE WAPIS ADD KIYA
 from google import genai
 import telebot
 
@@ -30,7 +31,7 @@ def handle_error(e):
     safe_send(error_msg)
     print(error_msg)
 
-# ====== 1. ACCOUNTS.JSON - AB VARIABLE SE AAYEGA ======
+# ====== 1. ACCOUNTS.JSON ======
 def load_accounts():
     accounts_json = os.getenv("ACCOUNTS_JSON")
     if not accounts_json:
@@ -60,8 +61,11 @@ def get_driver():
     options.add_argument("--window-size=1920,1080")
     options.binary_location = "/usr/bin/chromium"
 
+    # KHUD PATH DENGE. SELENIUM-MANAGER BAND
+    service = Service(executable_path="/usr/bin/chromedriver")
+    
     safe_send("✅ Starting Chrome driver...")
-    return webdriver.Chrome(options=options) # <-- SERVICE HATA DIYA. SELENIUM KHUD DHUNDEGA
+    return webdriver.Chrome(service=service, options=options)
 
 # ====== 4. GEMINI SCRIPT ======
 def generate_content():
@@ -167,7 +171,7 @@ def upload_to_platform(driver, platform, email, video_path, seo_data, thumbnail_
         safe_send(f"✅ {platform} done")
     except Exception as e: safe_send(f"❌ {platform} error: {e}")
 
-# ====== 9. MORNING JOB - SIRF BANANA ======
+# ====== 9. MORNING JOB ======
 def morning_job():
     safe_send("🚀 5:00 AM Video banana shuru")
     driver = None
@@ -191,7 +195,7 @@ def morning_job():
     finally:
         if driver: driver.quit()
 
-# ====== 10. EVENING JOB - SIRF UPLOAD ======
+# ====== 10. EVENING JOB ======
 def evening_job():
     if not os.path.exists(VIDEO_READY_FILE):
         safe_send("⚠️ 5PM: Koi video ready nahi hai upload ke liye")
