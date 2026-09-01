@@ -4,6 +4,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager # <-- NAYA
 from google import genai
 import telebot
 
@@ -58,7 +59,7 @@ def get_driver():
     options.add_argument(f"--user-data-dir={COOKIES_FOLDER}")
     options.add_argument("--window-size=1920,1080")
     options.binary_location = "/usr/bin/chromium"
-    service = Service("/usr/bin/chromedriver")
+    service = Service(ChromeDriverManager().install()) # <-- YEH LINE CHANGE
     return webdriver.Chrome(service=service, options=options)
 
 # ====== 4. GEMINI SCRIPT ======
