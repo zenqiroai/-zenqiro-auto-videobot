@@ -2,4 +2,4 @@
 nixPkgs = ["chromium", "nss", "nspr", "atk", "dbus", "libxkbcommon", "libXcomposite", "libXdamage", "libXfixes", "libXrandr", "libgbm", "libdrm", "libxcb", "libxshmfence", "libX11", "libXext", "cairo", "pango", "gdk-pixbuf", "alsa-lib"]
 
 [start]
-cmd = "CHROMEDRIVER_PATH=$(find /nix/store -name chromedriver | head -n 1) && ln -s $CHROMEDRIVER_PATH /usr/bin/chromedriver && python main.py"
+cmd = "python main.py"
